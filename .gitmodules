@@ -1,6 +1,6 @@
 [submodule "rdk-x5-webrtc"]
 	path = rdk-x5-webrtc
-	url = ../rdk-x5-webrtc
+	url = https://github.com/IOruning/rdk-x5-webrtc.git
 [submodule "web-client"]
 	path = web-client
-	url = ../web-client
+	url = https://github.com/IOruning/web-client.git
