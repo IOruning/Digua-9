@@ -1,6 +1,6 @@
 [submodule "rdk-x5-webrtc"]
 	path = rdk-x5-webrtc
-	url = /tmp/opensource/rdk-x5-webrtc
+	url = ../rdk-x5-webrtc
 [submodule "web-client"]
 	path = web-client
-	url = /tmp/opensource/web-client
+	url = ../web-client
