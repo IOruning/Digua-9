@@ -1,63 +1,66 @@
-# 地瓜⑨号 · 水面搜救辅助系统
+English | [中文](README_cn.md)
 
-创新竞赛"机器人+ 安全应急和极限环境应用"参赛项目，场景为水面搜救辅助：无人机在指定水域巡航，把实时画面、飞控状态、AI 目标识别结果和智能手环风险告警统一呈现给救援指挥人员和比赛评委。
+# Digua-9 · Water-Rescue Assistance System
 
-本仓库是项目的**主仓库**，通过 Git Submodules 聚合本项目的开源部分。
+An entry for the "Robot+ Safety Emergency and Extreme Environment Applications" innovation competition. Scenario: a drone patrols a designated body of water, streaming live video, flight status, AI object-detection results, and smart-wristband risk alerts to rescue commanders and competition judges in one unified view.
 
-## 整体系统架构
+This repository is the project's **main repository**, aggregating the open-source portion of the project via Git Submodules.
 
-完整比赛系统由四个子系统组成：
+## Overall system architecture
+
+The full competition system has four subsystems:
 
 ```text
-┌──────────────┐   BLE 广播    ┌───────────────────┐   独立 MQTT/WSS   ┌───────────────┐
-│   智能手环     │ ────────────▶ │    RDK 网关         │ ─────────────────▶│               │
-│ (未开源)       │  water_contact│  BLE 扫描/去重       │  手环风险事件、区域   │               │
-│               │  IMU/SOS 等   │  风险判断/事件生成    │  级定位、网关状态     │               │
-└──────────────┘               │  局域网管理端         │                   │               │
-                                │ (未开源)             │                   │  web-client    │
-                                └───────────────────┘                    │  (子模块·已开源) │
-┌──────────────┐   MAVLink     ┌───────────────────┐   同一条 WebRTC     │  浏览器只读展示   │
-│     PX4       │ ────────────▶ │  rdk-x5-webrtc     │  会话(视频+遥测+   │               │
-│    飞控        │               │  (子模块·已开源)     │  视觉检测+投放状态) │               │
-└──────────────┘               │  机载 C++ WebRTC 服务 │ ─────────────────▶│               │
-┌──────────────┐   USB/文件     │  DOSOD 视觉识别       │                   └───────────────┘
-│  摄像头/测试视频 │ ────────────▶ │                     │
+┌──────────────┐  BLE advert.  ┌───────────────────┐  Separate MQTT/WSS ┌───────────────┐
+│  Wristband    │ ────────────▶ │    RDK Gateway      │ ─────────────────▶│               │
+│ (not open-    │  water_contact│  BLE scan/dedup      │  wristband risk    │               │
+│  sourced)     │  IMU/SOS etc. │  risk判断/event gen   │  events, zone-level │               │
+└──────────────┘               │  LAN operator console │  location, gateway  │  web-client    │
+                                │ (not open-sourced)   │  status             │  (submodule ·   │
+                                └───────────────────┘                       │   open-sourced) │
+┌──────────────┐   MAVLink     ┌───────────────────┐   Single WebRTC       │  browser        │
+│     PX4       │ ────────────▶ │  rdk-x5-webrtc     │  session (video +   │  read-only UI   │
+│ flight ctrl   │               │  (submodule ·       │  telemetry + vision │               │
+└──────────────┘               │   open-sourced)     │  detections +       │               │
+┌──────────────┐  USB/file      │  onboard C++ WebRTC  │  release status)    │               │
+│ Camera / test  │ ───────────▶ │  service + DOSOD      │ ─────────────────▶│               │
+│ video          │              │  vision detection    │                    └───────────────┘
 └──────────────┘               └───────────────────┘
 ```
 
-| 子系统 | 职责 | 本仓库状态 |
+| Subsystem | Responsibility | Status in this repo |
 | --- | --- | --- |
-| **web-client** | 浏览器只读前端，展示视频、遥测、视觉识别、救援事件 | ✅ 已开源（submodule） |
-| **rdk-x5-webrtc** | 机载 C++ 服务：WebRTC 图传、MAVLink 遥测桥接、DOSOD 视觉识别 | ✅ 已开源（submodule） |
-| RDK 网关 | BLE 扫描去重、风险判断、救援事件生成、局域网管理端 | 未包含在本仓库 |
-| 手环固件 | 采集水浸、IMU、SOS、电量等状态并通过 BLE 上报 | 未包含在本仓库 |
+| **web-client** | Read-only browser frontend: video, telemetry, vision detections, rescue events | ✅ Open-sourced (submodule) |
+| **rdk-x5-webrtc** | Onboard C++ service: WebRTC video, MAVLink telemetry bridge, DOSOD vision detection | ✅ Open-sourced (submodule) |
+| RDK Gateway | BLE scanning/dedup, risk assessment, rescue-event generation, LAN operator console | Not included in this repo |
+| Wristband firmware | Collects water-contact, IMU, SOS, battery status and reports over BLE | Not included in this repo |
 
-前端（web-client）通过独立的 MQTT/WSS 只读订阅 RDK 网关发布的业务事件，因此即使网关和手环子系统的代码不在本仓库中，前端和机载端这两个已开源部分仍可以独立编译、独立演示（机载端的本地视频分支 + 前端的模拟遥测模式）。
+The frontend (web-client) subscribes read-only to business events published by the RDK Gateway over a separate MQTT/WSS link. So even though the gateway and wristband subsystems' code is not in this repository, the two open-sourced parts — frontend and onboard service — can each be built and demoed independently (the onboard service's local-video branch, and the frontend's simulated-telemetry mode).
 
-网站与机载服务严格只读：不包含飞控指令、投放控制、SOS 发起或事件处置回写能力；这些动作由遥控器、飞控、QGroundControl 或 RDK 网关本地管理端负责。
+The website and onboard service are strictly read-only: no flight-control commands, release control, SOS initiation, or event-disposition write-back. Those actions are handled by the remote control, the flight controller, QGroundControl, or the RDK Gateway's local operator console.
 
-## 仓库结构
+## Repository layout
 
 ```text
 nodehub/
-├── rdk-x5-webrtc/   # submodule：机载 C++ WebRTC/遥测/视觉服务
-├── web-client/      # submodule：浏览器前端
+├── rdk-x5-webrtc/   # submodule: onboard C++ WebRTC/telemetry/vision service
+├── web-client/      # submodule: browser frontend
 └── README.md
 ```
 
-## 获取代码
+## Getting the code
 
 ```bash
-git clone --recurse-submodules <本仓库地址>
+git clone --recurse-submodules <this repo's URL>
 ```
 
-如果已经 clone 过忘了带 `--recurse-submodules`：
+If you already cloned without `--recurse-submodules`:
 
 ```bash
 git submodule update --init --recursive
 ```
 
-## 快速看效果（不需要任何硬件）
+## See it running in minutes (no hardware needed)
 
 ```bash
 cd web-client
@@ -65,15 +68,15 @@ npm install
 npm run dev
 ```
 
-打开 `http://localhost:5173/`，在调试区开启模拟遥测（`VITE_ENABLE_TELEMETRY_SIMULATION=true`），即可看到完整界面和数据流转效果，无需无人机、RDK X5 板子或 MQTT broker。
+Open `http://localhost:5173/` and enable simulated telemetry in the debug panel (`VITE_ENABLE_TELEMETRY_SIMULATION=true`) to see the full UI and data flow — no drone, RDK X5 board, or MQTT broker required.
 
-如果有 RDK X5 硬件，`rdk-x5-webrtc` 支持用仓库自带的示例视频跑通"本地视频 → WebRTC 推流"链路，具体步骤见 [`rdk-x5-webrtc/README.md`](rdk-x5-webrtc/README.md)。
+If you have RDK X5 hardware, `rdk-x5-webrtc` can run the "local video → WebRTC streaming" path using the bundled sample video; see [`rdk-x5-webrtc/README.md`](rdk-x5-webrtc/README.md) for the steps.
 
-## 各子模块文档
+## Submodule documentation
 
-- [`rdk-x5-webrtc/README.md`](rdk-x5-webrtc/README.md)：机载服务架构、编译部署、协议契约
-- [`web-client/README.md`](web-client/README.md)：前端架构、开发调试、部署方式
+- [`rdk-x5-webrtc/README.md`](rdk-x5-webrtc/README.md): onboard service architecture, build/deploy, protocol contracts
+- [`web-client/README.md`](web-client/README.md): frontend architecture, development, deployment
 
-## 许可证
+## License
 
-主仓库及两个子模块均使用 [Apache License 2.0](LICENSE)。`rdk-x5-webrtc` 基于 [TzuHuanTai/RaspberryPi-WebRTC](https://github.com/TzuHuanTai/RaspberryPi-WebRTC) 二次开发，详见其 LICENSE 文件。
+The main repository and both submodules are licensed under [Apache License 2.0](LICENSE). `rdk-x5-webrtc` is a derivative work of [TzuHuanTai/RaspberryPi-WebRTC](https://github.com/TzuHuanTai/RaspberryPi-WebRTC); see its LICENSE file for details.
