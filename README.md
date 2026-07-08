@@ -13,31 +13,29 @@ The full competition system has four subsystems:
 ```text
 ┌──────────────┐  BLE advert.  ┌───────────────────┐  Separate MQTT/WSS ┌───────────────┐
 │  Wristband    │ ────────────▶ │    RDK Gateway      │ ─────────────────▶│               │
-│ (not open-    │  water_contact│  BLE scan/dedup      │  wristband risk    │               │
-│  sourced)     │  IMU/SOS etc. │  risk判断/event gen   │  events, zone-level │               │
-└──────────────┘               │  LAN operator console │  location, gateway  │  web-client    │
-                                │ (not open-sourced)   │  status             │  (submodule ·   │
-                                └───────────────────┘                       │   open-sourced) │
-┌──────────────┐   MAVLink     ┌───────────────────┐   Single WebRTC       │  browser        │
-│     PX4       │ ────────────▶ │  rdk-x5-webrtc     │  session (video +   │  read-only UI   │
-│ flight ctrl   │               │  (submodule ·       │  telemetry + vision │               │
-└──────────────┘               │   open-sourced)     │  detections +       │               │
-┌──────────────┐  USB/file      │  onboard C++ WebRTC  │  release status)    │               │
-│ Camera / test  │ ───────────▶ │  service + DOSOD      │ ─────────────────▶│               │
-│ video          │              │  vision detection    │                    └───────────────┘
+│               │  water_contact│  BLE scan/dedup      │  wristband risk    │               │
+│               │  IMU/SOS etc. │  risk assessment     │  events, zone-level │               │
+└──────────────┘               │  event generation    │  location, gateway  │  web-client    │
+                                │  LAN operator console │  status             │               │
+                                └───────────────────┘                       │  browser        │
+┌──────────────┐   MAVLink     ┌───────────────────┐   Single WebRTC       │  read-only UI   │
+│     PX4       │ ────────────▶ │  rdk-x5-webrtc     │  session (video +   │               │
+│ flight ctrl   │               │                     │  telemetry + vision │               │
+└──────────────┘               │  onboard C++ WebRTC  │  detections +       │               │
+┌──────────────┐  USB/file      │  service + DOSOD      │  release status)    │               │
+│ Camera / test  │ ───────────▶ │  vision detection    │ ─────────────────▶│               │
+│ video          │              │                     │                    └───────────────┘
 └──────────────┘               └───────────────────┘
 ```
 
-| Subsystem | Responsibility | Status in this repo |
-| --- | --- | --- |
-| **web-client** | Read-only browser frontend: video, telemetry, vision detections, rescue events | ✅ Open-sourced (submodule) |
-| **rdk-x5-webrtc** | Onboard C++ service: WebRTC video, MAVLink telemetry bridge, DOSOD vision detection | ✅ Open-sourced (submodule) |
-| RDK Gateway | BLE scanning/dedup, risk assessment, rescue-event generation, LAN operator console | Not included in this repo |
-| Wristband firmware | Collects water-contact, IMU, SOS, battery status and reports over BLE | Not included in this repo |
+| Subsystem | Responsibility |
+| --- | --- |
+| **web-client** | Read-only browser frontend: video, telemetry, vision detections, rescue events |
+| **rdk-x5-webrtc** | Onboard C++ service: WebRTC video, MAVLink telemetry bridge, DOSOD vision detection |
 
-The frontend (web-client) subscribes read-only to business events published by the RDK Gateway over a separate MQTT/WSS link. So even though the gateway and wristband subsystems' code is not in this repository, the two open-sourced parts — frontend and onboard service — can each be built and demoed independently (the onboard service's local-video branch, and the frontend's simulated-telemetry mode).
+The frontend (web-client) subscribes read-only to business events published by the RDK Gateway over a separate MQTT/WSS link. Both parts can be built and demoed independently (the onboard service's local-video branch, and the frontend's simulated-telemetry mode).
 
-The website and onboard service are strictly read-only: no flight-control commands, release control, SOS initiation, or event-disposition write-back. Those actions are handled by the remote control, the flight controller, QGroundControl, or the RDK Gateway's local operator console.
+The frontend and onboard service are strictly read-only: no flight-control commands, release control, SOS initiation, or event-disposition write-back. Those actions are handled by the remote control, the flight controller, QGroundControl, or the RDK Gateway's local operator console.
 
 ## Repository layout
 
